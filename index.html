@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Soluciones OMME</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0; padding: 0;
+      background: #f9f9f9;
+      color: #333;
+    }
+    header {
+      background: #5a2d82; /* morado OMME */
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+    header img {
+      height: 60px;
+    }
+    h1 {
+      margin: 10px 0;
+    }
+    .container {
+      max-width: 900px;
+      margin: 20px auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    table th, table td {
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+      text-align: center;
+    }
+    table th {
+      background: #5a2d82;
+      color: white;
+    }
+    .total {
+      font-size: 22px;
+      font-weight: bold;
+      margin-top: 20px;
+      text-align: right;
+      color: #5a2d82;
+    }
+    button {
+      background: #ff6600;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      cursor: pointer;
+      border-radius: 5px;
+      margin-top: 15px;
+    }
+    button:hover {
+      background: #e65c00;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <img src="logo-omme.png" alt="Logo OMME">
+  <h1>Soluciones OMME</h1>
+  <p>Sistemas Integrados de Gestión Empresarial</p>
+</header>
+
+<div class="container">
+  <h2>Calculadora de Planes</h2>
+  <label>ITBIS % <input type="number" id="itbis" value="18" min="0"></label>
+  <br><br>
+  <table id="tablaPlanes">
+    <thead>
+      <tr>
+        <th>Incluir</th>
+        <th>Ítem</th>
+        <th>Tipo</th>
+        <th>Cantidad</th>
+        <th>Precio (DOP)</th>
+        <th>Desc. %</th>
+        <th>ITBIS</th>
+        <th>Subtotal</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><input type="checkbox" class="incluye"></td>
+        <td>Sistema Odoo (base 4 usuarios, incluye FE)</td>
+        <td>Mensual</td>
+        <td><input type="number" value="1" class="cantidad"></td>
+        <td><input type="number" value="12000" class="precio"></td>
+        <td><input type="number" value="0" class="descuento"></td>
+        <td>Exento</td>
+        <td class="subtotal">RD$0</td>
+      </tr>
+      <tr>
+        <td><input type="checkbox" class="incluye"></td>
+        <td>Contabilidad General</td>
+        <td>Mensual</td>
+        <td><input type="number" value="1" class="cantidad"></td>
+        <td><input type="number" value="15000" class="precio"></td>
+        <td><input type="number" value="0" class="descuento"></td>
+        <td><input type="checkbox" class="itbis" checked></td>
+        <td class="subtotal">RD$0</td>
+      </tr>
+      <tr>
+        <td><input type="checkbox" class="incluye"></td>
+        <td>Asesoría y Gestión Fiscal</td>
+        <td>Mensual</td>
+        <td><input type="number" value="1" class="cantidad"></td>
+        <td><input type="number" value="15000" class="precio"></td>
+        <td><input type="number" value="0" class="descuento"></td>
+        <td><input type="checkbox" class="itbis" checked></td>
+        <td class="subtotal">RD$0</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <button onclick="calcular()">Calcular Total</button>
+  <div class="total" id="resultado">TOTAL: RD$0</div>
+</div>
+
+<script>
+function calcular() {
+  let filas = document.querySelectorAll("#tablaPlanes tbody tr");
+  let total = 0;
+  let totalITBIS = 0;
+  let seleccionados = 0;
+  let itbisRate = parseFloat(document.getElementById("itbis").value)/100;
+
+  filas.forEach(fila => {
+    let chk = fila.querySelector(".incluye");
+    if (chk.checked) {
+      seleccionados++;
+      let cantidad = parseFloat(fila.querySelector(".cantidad").value);
+      let precio = parseFloat(fila.querySelector(".precio").value);
+      let desc = parseFloat(fila.querySelector(".descuento").value)/100;
+      let base = cantidad * precio * (1 - desc);
+
+      let aplicaItbis = fila.querySelector(".itbis");
+      if (aplicaItbis && aplicaItbis.checked) {
+        totalITBIS += base * itbisRate;
+      }
+      total += base;
+      fila.querySelector(".subtotal").innerText = "RD$" + base.toLocaleString("es-DO");
+    } else {
+      fila.querySelector(".subtotal").innerText = "RD$0";
+    }
+  });
+
+  // Descuento automático
+  let extraDesc = 0;
+  if (seleccionados === 2) extraDesc = 0.35;
+  if (seleccionados >= 3) extraDesc = 0.45;
+
+  let descuento = total * extraDesc;
+  let baseNeta = total - descuento;
+  let totalFinal = baseNeta + totalITBIS;
+
+  document.getElementById("resultado").innerText =
+    "TOTAL: RD$" + totalFinal.toLocaleString("es-DO");
+}
+</script>
+
+</body>
+</html>
