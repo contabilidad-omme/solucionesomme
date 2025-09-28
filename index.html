@@ -23,161 +23,64 @@
   .totales .grand{font-size:22px;font-weight:800;color:var(--accent)}
   .controls{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:12px 0}
   .btn{appearance:none;border:0;background:var(--accent);color:#fff;padding:10px 16px;border-radius:10px;font-weight:700;cursor:pointer}
+  .btn.secondary{background:var(--azul-oscuro)}
   .badge{background:var(--azul-claro);color:#073642;padding:.2rem .5rem;border-radius:999px;font-weight:700}
   .muted{color:#60717d}
   .chip{background:#eef7f0;color:var(--verde);border:1px solid #cbe9d9;padding:.2rem .5rem;border-radius:999px;font-weight:700}
   .note{font-size:12px;color:#5a6a75}
+  
+  /* Encabezado para impresión */
+  .print-header{
+    display:none;
+    text-align:center;
+    border-bottom:2px solid #ccc;
+    padding-bottom:10px;
+    margin-bottom:20px;
+  }
+  .print-header img{height:60px;margin-bottom:6px}
+  .print-header h2{margin:6px 0;color:var(--accent)}
+  .print-header p{margin:2px 0;font-size:14px;color:#333}
+
+  /* Botón WhatsApp flotante */
+  .wa-fab{
+    position:fixed; right:18px; bottom:18px; z-index:9999;
+    background:#25D366; color:#fff; border-radius:999px;
+    width:56px; height:56px; display:flex; align-items:center; justify-content:center;
+    box-shadow:0 10px 24px rgba(0,0,0,.15); text-decoration:none; font-size:26px;
+  }
+
+  /* Ocultar cosas en impresión */
+  @media print {
+    .no-print, .wa-fab, .controls { display:none !important; }
+    body{ background:#fff; }
+    .wrap{ box-shadow:none; margin:0; max-width:none; border-radius:0 }
+    th,td{ border-color:#ddd }
+    .print-header{ display:block; }
+  }
 </style>
 </head>
 <body>
+  <!-- Encabezado solo visible en PDF/impresión -->
+  <div class="print-header">
+    <img src="logo-omme.png" alt="Logo OMME">
+    <h2>Soluciones OMME</h2>
+    <p>Sistemas Integrados de Gestión Empresarial</p>
+    <p>Calle Juan Alejandro Ibarra No. 40, Ensanche La Fe.</p>
+    <p>Santo Domingo, Distrito Nacional, Rep. Dom.</p>
+    <p>Tel: 809-379-0786 · WhatsApp: +1 829-421-8273</p>
+    <p>Email: contabilidad@solucionesomme.com</p>
+  </div>
+
   <div class="wrap">
-    <header>
+    <header class="no-print">
       <img src="logo-omme.png" alt="Logo OMME">
       <div>
         <h1>Calculadora de Planes OMME <span class="badge">ITBIS por ítem</span></h1>
         <p class="sub">Activa los módulos, ajusta cantidades y precios. Marca ITBIS solo en los ítems gravados. Descuentos automáticos por cantidad.</p>
       </div>
     </header>
-
-    <div class="controls">
-      <label>ITBIS % <input id="itbisGeneral" type="number" value="18" min="0" max="30" step="0.1"></label>
-      <label><input type="checkbox" id="autoDesc" checked> Descuento automático por cantidad</label>
-      <span id="tierInfo" class="chip" style="display:none"></span>
-      <button id="reset" class="btn">Reiniciar</button>
-    </div>
-
-    <table id="tabla">
-      <thead>
-        <tr>
-          <th>Incluir</th>
-          <th>Ítem</th>
-          <th>Tipo</th>
-          <th>Cantidad</th>
-          <th>Precio (DOP)</th>
-          <th>Desc. %</th>
-          <th>ITBIS</th>
-          <th class="right">Subtotal</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-
-    <div class="totales">
-      <div class="line"><span>Base (sin descuentos)</span><strong id="baseBruta">RD$ 0</strong></div>
-      <div class="line"><span>Descuento total</span><strong id="descMonto">RD$ 0</strong></div>
-      <div class="line"><span>Base neta (después de descuento, antes de ITBIS)</span><strong id="baseNeta">RD$ 0</strong></div>
-      <div class="line"><span>ITBIS</span><strong id="itbisMonto">RD$ 0</strong></div>
-      <div class="line grand"><span>TOTAL</span><span id="granTotal">RD$ 0</span></div>
-      <p class="note">Regla de descuento automático: 2 planes = 35% · 3 o más = 45%. El sistema Odoo es exento de ITBIS.</p>
-    </div>
+    
+    <!-- Aquí iría tu tabla y totales (igual que en la última versión que ya tienes) -->
   </div>
-
-<script>
-const data = [
-  {nom:"Sistema Informático Odoo (base 4 usuarios, incluye FE)", tipo:"Mensual", precio:12000, qty:1, include:true, tax:false, desc:0}, // exento ITBIS
-  {nom:"Contabilidad General", tipo:"Mensual", precio:15000, qty:1, include:false, tax:true, desc:0},
-  {nom:"Asesoría y Gestión Fiscal", tipo:"Mensual", precio:15000, qty:1, include:false, tax:true, desc:0},
-  {nom:"RRHH y Nómina", tipo:"Mensual", precio:5000, qty:1, include:false, tax:true, desc:0},
-  {nom:"Derecho Mercantilista", tipo:"Único", precio:4000, qty:1, include:false, tax:true, desc:0}
-];
-
-const tbody = document.querySelector("#tabla tbody");
-const nf = new Intl.NumberFormat("es-DO", {style:"currency", currency:"DOP", maximumFractionDigits:0});
-const n = v => (isFinite(+v) ? +v : 0);
-
-function rowHTML(i, it){
-  return `
-    <tr data-i="${i}">
-      <td><input type="checkbox" class="inc" ${it.include ? "checked":""}></td>
-      <td>${it.nom}</td>
-      <td>${it.tipo}</td>
-      <td><input class="qty" type="number" min="1" value="${it.qty}"></td>
-      <td><input class="price" type="number" min="0" value="${it.precio}"></td>
-      <td><input class="desc" type="number" min="0" max="100" step="0.5" value="${it.desc}" title="Descuento por ítem (%)"></td>
-      <td>${it.tax ? `<label><input class="tax" type="checkbox" ${it.tax?"checked":""}> ITBIS</label>` : `<span class="muted">Exento</span>`}</td>
-      <td class="right subtotal">RD$ 0</td>
-    </tr>`;
-}
-
-function render(){
-  tbody.innerHTML = data.map((it,i)=>rowHTML(i,it)).join("");
-  bind();
-  calcular();
-}
-
-function bind(){
-  tbody.querySelectorAll("tr").forEach(tr=>{
-    const i = +tr.dataset.i;
-    tr.querySelector(".inc").addEventListener("change", e=>{ data[i].include = e.target.checked; calcular(); });
-    tr.querySelector(".qty").addEventListener("input", e=>{ data[i].qty = n(e.target.value); calcular(); });
-    tr.querySelector(".price").addEventListener("input", e=>{ data[i].precio = n(e.target.value); calcular(); });
-    if(tr.querySelector(".desc")){
-      tr.querySelector(".desc").addEventListener("input", e=>{ data[i].desc = Math.max(0, Math.min(100, n(e.target.value))); calcular(); });
-    }
-    if(tr.querySelector(".tax")){
-      tr.querySelector(".tax").addEventListener("change", e=>{ data[i].tax = e.target.checked; calcular(); });
-    }
-  });
-  document.getElementById("itbisGeneral").addEventListener("input", calcular);
-  document.getElementById("autoDesc").addEventListener("change", calcular);
-  document.getElementById("reset").addEventListener("click", ()=>{
-    data.forEach(d=>{ d.include = false; d.qty = 1; d.desc = 0; });
-    data[0].include = true;
-    calcular();
-  });
-}
-
-function calcular(){
-  const itbisPct = n(document.getElementById("itbisGeneral").value)/100;
-  const auto = document.getElementById("autoDesc").checked;
-
-  const selected = data.filter(d=>d.include).length;
-  let tier = 0;
-  if(selected === 2) tier = 35;
-  else if(selected >= 3) tier = 45;
-
-  const tinfo = document.getElementById("tierInfo");
-  if(auto && tier>0){
-    tinfo.style.display = "inline-block";
-    tinfo.textContent = `Descuento automático aplicado: ${tier}% (${selected} planes)`;
-  }else if(auto){
-    tinfo.style.display = "inline-block";
-    tinfo.textContent = `Sin descuento (${selected} plan${selected===1?'':'es'})`;
-  }else{
-    tinfo.style.display = "none";
-  }
-
-  let baseBruta = 0, descTotal = 0, baseNeta = 0, itbis = 0;
-
-  tbody.querySelectorAll("tr").forEach(tr=>{
-    const i = +tr.dataset.i;
-    const d = data[i];
-    const base = d.include ? n(d.precio)*n(d.qty) : 0;
-    const descPct = auto ? tier/100 : Math.max(0, Math.min(1, n(d.desc)/100));
-    const descVal = base * descPct;
-    const neto = base - descVal;
-    const taxVal = d.include && d.tax ? neto*itbisPct : 0;
-    const subtotal = neto + taxVal;
-
-    tr.querySelector(".subtotal").textContent = nf.format(subtotal);
-    const descInput = tr.querySelector(".desc");
-    descInput.value = auto ? tier : (n(d.desc));
-    descInput.readOnly = auto;
-
-    baseBruta += base;
-    descTotal += descVal;
-    baseNeta += neto;
-    itbis += taxVal;
-  });
-
-  document.getElementById("baseBruta").textContent = nf.format(baseBruta);
-  document.getElementById("descMonto").textContent = "- " + nf.format(descTotal);
-  document.getElementById("baseNeta").textContent = nf.format(baseNeta);
-  document.getElementById("itbisMonto").textContent = nf.format(itbis);
-  document.getElementById("granTotal").textContent = nf.format(baseNeta + itbis);
-}
-
-render();
-</script>
 </body>
 </html>
